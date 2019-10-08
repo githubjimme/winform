@@ -9,3 +9,14 @@ C:\Users\Gebruiker\Desktop\AionBot - kopie (2)\DirectInputApp\obj\Debug\DirectIn
 C:\Users\Gebruiker\Desktop\AionBot - kopie (2)\DirectInputApp\obj\Debug\WindowsFormsApp27.exe
 C:\Users\Gebruiker\Desktop\AionBot - kopie (2)\DirectInputApp\obj\Debug\WindowsFormsApp27.pdb
 C:\Users\Gebruiker\Desktop\AionBot - kopie (2)\DirectInputApp\obj\Debug\WindowsFormsApp27.BotForm.resources
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\bin\Debug\WindowsFormsApp27.exe.config
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\bin\Debug\WindowsFormsApp27.exe
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\bin\Debug\WindowsFormsApp27.pdb
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\DirectInputApp.csprojAssemblyReference.cache
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\WindowsFormsApp27.BotForm.resources
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\WindowsFormsApp27.Properties.Resources.resources
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\WindowsFormsApp27.RecordingForm.resources
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\DirectInputApp.csproj.GenerateResource.cache
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\DirectInputApp.csproj.CoreCompileInputs.cache
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\WindowsFormsApp27.exe
+C:\Users\Gebruiker\Desktop\AionBot\DirectInputApp\obj\Debug\WindowsFormsApp27.pdb

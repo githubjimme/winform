@@ -53,142 +53,28 @@ namespace WindowsFormsApp27
         }
     }
 
-    /// <summary>
-    /// reads lines from xmlfile and sends the keys, mouselcicks and delays to the window through a hook
-    /// </summary>
-    public class Bot
-    {
-        private static readonly CancellationToken Token = new CancellationToken();
-
-        public static void Start()
-        {
-            ThreadPool.QueueUserWorkItem(SendKeysToWindow, Token);
-        }
-
-        private static void SendKeysToWindow(object obj)
-        {
-
-            List<Recording> list = XMLRecorder.Deserialize();
-
-            foreach (var recordObj in list)
-            {
-                if (Token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                SendDelayToWindow(recordObj.Delay);
-                SendMouseToWindow(recordObj.MouseClick, recordObj.X, recordObj.Y);
-                SendKeyToWindow(recordObj.KeyPress);
-            }
-        }
-
-        private static void SendDelayToWindow(int delay)
-        {
-            try
-            {
-                Util.Delay(delay);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Could not send delay to window ", e.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-        private static void SendKeyToWindow(Keys key)
-        {
-            if (!string.IsNullOrWhiteSpace(key.ToString()))
-            {
-                Util.KeyPress(key);
-            }
-        }
-
-        private static void SendMouseToWindow(string mouseclick, int x, int y)
-        {
-            if (!string.IsNullOrWhiteSpace(mouseclick))
-            {
-                Util.MouseClick(mouseclick, (uint)x, (uint)y);
-            }
-        }
-    }
-       
-    /// <summary>
-    /// creates xmlfile, serializes and deserializes xml file
-    ///  </summary>
-    public class XMLRecorder
-    {
-        public static void Serialize()
-        {
-            FileCheck();
-
-            XmlSerializer serializer = new XmlSerializer(typeof(List<Recording>));
-            StreamWriter writer = new StreamWriter(Environment.CurrentDirectory + @"\Recordings.xml");
-
-            serializer.Serialize(writer, RecordingList.Records);
-            writer.Close();
-
-            RecordingList.Records.Clear();
-        }
-
-        public static List<Recording> Deserialize()
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(List<Recording>));
-            StreamReader reader = new StreamReader(Environment.CurrentDirectory + @"\Recordings.xml");
-            List<Recording> list = null;
-
-            try
-            {
-                list = serializer.Deserialize(reader) as List<Recording>;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Could not deserialize List ", e.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-            reader.Close();
-
-            return list;
-        }
-
-        private static void FileCheck()
-        {
-            if (File.Exists(Environment.CurrentDirectory + @"\Recordings.xml"))
-            {
-                File.Delete(Environment.CurrentDirectory + @"\Recordings.xml");
-            }
-        }
-    }
-
-    /// <summary>
-    /// saves the recorded key delays and mouseclick with locations
-    /// </summary>
-    public class Recording
-    {
-        public int Delay { get; set; }
-        public Keys KeyPress { get; set; }
-        public string MouseClick { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
-    }
-
-    /// <summary>
-    /// list of recoding objects
-    /// </summary>
-    public class RecordingList
-    {
-        public static readonly List<Recording> Records = new List<Recording>();
-
-        public static void AddToList(Recording recording)
-        {
-            Records.Add(recording);
-        }
-    }
-
 
     /// <summary>
     /// intercepts the keys pressed after the hook is set
     /// </summary>
     public class InterceptKeys
     {
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
         private static LowLevelKeyboardProc Proc = HookCallback;
@@ -230,9 +116,16 @@ namespace WindowsFormsApp27
 
             return CallNextHookEx(App, nCode, wParam, lParam);
         }
+    }
 
+
+    /// <summary>
+    /// intercepts the mouse clicks with locations after the hook is set
+    /// </summary>
+    public class InterceptMouse
+    {
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -244,16 +137,6 @@ namespace WindowsFormsApp27
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-    }
-
-
-    /// <summary>
-    /// intercepts the mouse clicks with locations after the hook is set
-    /// </summary>
-    public class InterceptMouse
-    {
         private static readonly List<string> ListOfKeysAndDelays = new List<string>();
         private static LowLevelMouseProc Proc = HookCallback;
         private static IntPtr App = Window.FindWindow();
@@ -339,20 +222,8 @@ namespace WindowsFormsApp27
             public uint time;
             public IntPtr dwExtraInfo;
         }
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr GetModuleHandle(string lpModuleName);
     }
+
 
     /// <summary>
     /// get the exact time after an input and calculates the delay between them
@@ -396,6 +267,7 @@ namespace WindowsFormsApp27
         }
     }
 
+
     public class Window
     {
         [DllImport("user32.dll", SetLastError = true)]
@@ -413,6 +285,7 @@ namespace WindowsFormsApp27
             return FindWindow(null, WindowName);
         }
     }
+
 
     /// <summary>
     /// there are only 2 ways to simulate key and mousepresses to a window that is not active, they are both methods from a dll import.
@@ -636,6 +509,140 @@ namespace WindowsFormsApp27
             PostMessage(hWnd, (uint)WMessages.WM_SETCURSOR, 0, lParam);
             PostMessage(hWnd, (uint)WMessages.WM_RBUTTONDOWN, 0, lParam);
             PostMessage(hWnd, (uint)WMessages.WM_RBUTTONUP, 0, lParam);
+        }
+    }
+
+
+    /// <summary>
+    /// reads lines from xmlfile and sends the keys, mouselcicks and delays to the window through a hook
+    /// </summary>
+    public class Bot
+    {
+        private static readonly CancellationToken Token = new CancellationToken();
+
+        public static void Start()
+        {
+            ThreadPool.QueueUserWorkItem(SendKeysToWindow, Token);
+        }
+
+        private static void SendKeysToWindow(object obj)
+        {
+
+            List<Recording> list = XMLRecorder.Deserialize();
+
+            foreach (var recordObj in list)
+            {
+                if (Token.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                SendDelayToWindow(recordObj.Delay);
+                SendMouseToWindow(recordObj.MouseClick, recordObj.X, recordObj.Y);
+                SendKeyToWindow(recordObj.KeyPress);
+            }
+        }
+
+        private static void SendDelayToWindow(int delay)
+        {
+            try
+            {
+                Util.Delay(delay);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not send delay to window ", e.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private static void SendKeyToWindow(Keys key)
+        {
+            if (!string.IsNullOrWhiteSpace(key.ToString()))
+            {
+                Util.KeyPress(key);
+            }
+        }
+
+        private static void SendMouseToWindow(string mouseclick, int x, int y)
+        {
+            if (!string.IsNullOrWhiteSpace(mouseclick))
+            {
+                Util.MouseClick(mouseclick, (uint)x, (uint)y);
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// creates xmlfile, serializes and deserializes xml file
+    ///  </summary>
+    public class XMLRecorder
+    {
+        public static void Serialize()
+        {
+            FileCheck();
+
+            XmlSerializer serializer = new XmlSerializer(typeof(List<Recording>));
+            StreamWriter writer = new StreamWriter(Environment.CurrentDirectory + @"\Recordings.xml");
+
+            serializer.Serialize(writer, RecordingList.Records);
+            writer.Close();
+
+            RecordingList.Records.Clear();
+        }
+
+        public static List<Recording> Deserialize()
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(List<Recording>));
+            StreamReader reader = new StreamReader(Environment.CurrentDirectory + @"\Recordings.xml");
+            List<Recording> list = null;
+
+            try
+            {
+                list = serializer.Deserialize(reader) as List<Recording>;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Could not deserialize List ", e.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            reader.Close();
+
+            return list;
+        }
+
+        private static void FileCheck()
+        {
+            if (File.Exists(Environment.CurrentDirectory + @"\Recordings.xml"))
+            {
+                File.Delete(Environment.CurrentDirectory + @"\Recordings.xml");
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// saves the recorded key delays and mouseclick with locations
+    /// </summary>
+    public class Recording
+    {
+        public int Delay { get; set; }
+        public Keys KeyPress { get; set; }
+        public string MouseClick { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
+
+
+    /// <summary>
+    /// list of recoding objects
+    /// </summary>
+    public class RecordingList
+    {
+        public static readonly List<Recording> Records = new List<Recording>();
+
+        public static void AddToList(Recording recording)
+        {
+            Records.Add(recording);
         }
     }
 }
