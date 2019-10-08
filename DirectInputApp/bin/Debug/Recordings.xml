@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfRecording xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Recording>
+    <Delay>1062</Delay>
+    <KeyPress>None</KeyPress>
+    <MouseClick>Left</MouseClick>
+    <X>877</X>
+    <Y>556</Y>
+  </Recording>
+</ArrayOfRecording>
